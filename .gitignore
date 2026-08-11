@@ -1,0 +1,7 @@
+build/
+*.o
+*.out
+.cache/
+.vscode/
+.idea/
+cmake-build-*/

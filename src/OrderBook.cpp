@@ -89,3 +89,21 @@ size_t OrderBook::size() const {
     }
     return size;
 }
+
+int OrderBook::quantityAtBestBid() const {
+    int qty = 0;
+    if(buyLevels_.empty()) return qty;
+    for(const auto& order:buyLevels_.begin()->second){
+        qty += order.quantity;
+    }
+    return qty;
+}
+
+int OrderBook::quantityAtBestAsk() const {
+    int qty = 0;
+    if(sellLevels_.empty()) return qty;
+    for(const auto& order:sellLevels_.begin()->second){
+        qty += order.quantity;
+    }
+    return qty;
+}

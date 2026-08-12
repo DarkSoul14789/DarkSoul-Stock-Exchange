@@ -26,6 +26,10 @@ public:
     // Total number of resting orders currently in the book.
     size_t size() const;
 
+    // Returns qty of the first/best level.
+    int quantityAtBestBid() const;
+    int quantityAtBestAsk() const;
+
 private:
     // Buy side: highest price first  -> std::greater comparator
     std::map<double, std::deque<Order>, std::greater<double>> buyLevels_;

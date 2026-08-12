@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 template <typename OppositeLevels, typename OwnLevels>
-std::vector<Trade> matchAndRest(Order order, OppositeLevels& opposite, OwnLevels& own) {
+std::vector<Trade> OrderBook::matchAndRest(Order order, OppositeLevels& opposite, OwnLevels& own) {
     std::vector<Trade> trades;
 
     while (order.quantity != 0 && !opposite.empty()) {
@@ -46,6 +46,7 @@ std::vector<Trade> matchAndRest(Order order, OppositeLevels& opposite, OwnLevels
     }
     if (order.quantity != 0 && order.type == Order::Type::Limit) {
         own[order.price].push_back(order);
+        orderLocations_.insert({order.id, {order.price, order.side}});
     }
     return trades;
 }
@@ -59,10 +60,48 @@ std::vector<Trade> OrderBook::addOrder(Order order) {
     }
 }
 
+template <typename Levels>
+bool OrderBook::cancel(Levels& levels, double price, uint64_t orderId){
+    if(levels.size() == 0) return false;
+
+    auto levelIt = levels.find(price);
+
+    if(levelIt == levels.end()) return false;
+
+    auto &level = levelIt->second;
+
+    auto it = std::find_if(level.begin(), level.end(), [orderId](const Order &order){
+        return orderId == order.id;
+    });
+
+    if(it == level.end()) return false;
+
+    level.erase(it);
+
+    if(level.empty()){
+        levels.erase(levelIt);
+    }
+
+    return true;
+}
+
 bool OrderBook::cancelOrder(uint64_t orderId) {
-    (void)orderId;
-    // TODO
-    throw std::logic_error("OrderBook::cancelOrder not implemented");
+    auto location = orderLocations_.find(orderId);
+    if(location == orderLocations_.end()){
+        return false; //Order not found
+    }
+    bool ret;
+    if(location->second.second == Order::Side::Buy){
+        ret = cancel(buyLevels_, location->second.first, orderId);
+    }
+    else{
+        ret = cancel(sellLevels_, location->second.first, orderId);
+    }
+
+    if(ret == true){
+        orderLocations_.erase(orderId);
+    }
+    return ret;
 }
 
 std::optional<double> OrderBook::bestBid() const {

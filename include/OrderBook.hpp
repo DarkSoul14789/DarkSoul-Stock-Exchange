@@ -31,11 +31,19 @@ public:
     int quantityAtBestAsk() const;
 
 private:
+    template <typename OppositeLevels, typename OwnLevels>
+    std::vector<Trade> matchAndRest(Order order, OppositeLevels& opposite, OwnLevels& own);
+
+    template <typename Levels>
+    bool cancel(Levels& levels, double price, uint64_t orderId);
+
     // Buy side: highest price first  -> std::greater comparator
     std::map<double, std::deque<Order>, std::greater<double>> buyLevels_;
     // Sell side: lowest price first -> default std::less comparator
     std::map<double, std::deque<Order>> sellLevels_;
 
+    // Maps orderid to price and side
+    std::unordered_map<uint64_t, std::pair<double, Order::Side>> orderLocations_;
 
     mutable std::mutex mutex_;  // guards the maps above if accessed concurrently
 };

@@ -84,3 +84,22 @@ TEST_CASE("a market order with insufficient liquidity does not rest", "[orderboo
     REQUIRE(trades.size() == 0);
     REQUIRE(book.size() == 0);
 }
+
+TEST_CASE("cancel removes a resting order and it can no longer be matched", "[orderbook][cancel]") {
+    OrderBook book;
+    Order sell(1, Order::Side::Sell, Order::Type::Limit, 100.0, 5);
+    book.addOrder(sell);
+    bool success = book.cancelOrder(1);
+    REQUIRE(success == true);
+    REQUIRE(book.size() == 0);
+
+    Order buy(2, Order::Side::Buy, Order::Type::Limit, 100.0, 5);
+    auto trades = book.addOrder(buy);
+    REQUIRE(trades.empty());
+}
+
+TEST_CASE("cancelling a non-existent order id returns false", "[orderbook][cancel]") {
+    OrderBook book;
+    bool success = book.cancelOrder(999);
+    REQUIRE(success == false);
+}

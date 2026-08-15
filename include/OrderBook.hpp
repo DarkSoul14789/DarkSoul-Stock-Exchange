@@ -45,5 +45,6 @@ private:
     // Maps orderid to price and side
     std::unordered_map<uint64_t, std::pair<double, Order::Side>> orderLocations_;
 
+    //mutable so that it is allowed to change values in const functions
     mutable std::mutex mutex_;  // guards the maps above if accessed concurrently
 };

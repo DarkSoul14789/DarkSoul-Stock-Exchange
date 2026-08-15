@@ -52,6 +52,7 @@ std::vector<Trade> OrderBook::matchAndRest(Order order, OppositeLevels& opposite
 }
 
 std::vector<Trade> OrderBook::addOrder(Order order) {
+    std::lock_guard<std::mutex> lock(mutex_);
     if(order.side == Order::Side::Buy){
         return matchAndRest(order, sellLevels_, buyLevels_);
     }
@@ -86,6 +87,7 @@ bool OrderBook::cancel(Levels& levels, double price, uint64_t orderId){
 }
 
 bool OrderBook::cancelOrder(uint64_t orderId) {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto location = orderLocations_.find(orderId);
     if(location == orderLocations_.end()){
         return false; //Order not found
@@ -105,6 +107,7 @@ bool OrderBook::cancelOrder(uint64_t orderId) {
 }
 
 std::optional<double> OrderBook::bestBid() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     if(buyLevels_.empty()){
         return std::nullopt;
     }
@@ -112,6 +115,7 @@ std::optional<double> OrderBook::bestBid() const {
 }
 
 std::optional<double> OrderBook::bestAsk() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     if(sellLevels_.empty()){
         return std::nullopt;
     }
@@ -119,6 +123,7 @@ std::optional<double> OrderBook::bestAsk() const {
 }
 
 size_t OrderBook::size() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     size_t size = 0;
     for(const auto &[price, orders] : buyLevels_){
         size += orders.size();
@@ -130,6 +135,7 @@ size_t OrderBook::size() const {
 }
 
 int OrderBook::quantityAtBestBid() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     int qty = 0;
     if(buyLevels_.empty()) return qty;
     for(const auto& order:buyLevels_.begin()->second){
@@ -139,6 +145,7 @@ int OrderBook::quantityAtBestBid() const {
 }
 
 int OrderBook::quantityAtBestAsk() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     int qty = 0;
     if(sellLevels_.empty()) return qty;
     for(const auto& order:sellLevels_.begin()->second){

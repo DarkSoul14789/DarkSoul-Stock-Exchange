@@ -44,6 +44,36 @@ public:
         std::unique_lock<std::mutex> lock(mutex_);
         return queue_.size();
     }
+    
+    // Pushes a whole batch of items under a single lock acquisition, then
+    // wakes the consumer once. Amortizes lock/notify overhead across
+    // `items.size()` elements instead of paying it once per element.
+    void pushBatch(std::vector<T> items){
+        std::unique_lock<std::mutex> lock(mutex_);
+        for (auto& item : items) {
+            queue_.push_back(std::move(item));
+        }
+        lock.unlock();
+        cv_.notify_one();
+    }
+
+    // Blocks until at least one item is available, then pops up to
+    // maxBatch items in one lock acquisition. Returns fewer than
+    // maxBatch items if that's all that's currently available - this
+    // does not wait to fill the batch completely.
+    std::vector<T> popBatch(size_t maxBatch){
+        std::unique_lock<std::mutex> lock(mutex_);
+        cv_.wait(lock, [this]{ return !queue_.empty(); });
+
+        std::vector<T> batch;
+        size_t n = std::min(maxBatch, queue_.size());
+        batch.reserve(n);
+        for (size_t i = 0; i < n; ++i) {
+            batch.push_back(std::move(queue_.front()));
+            queue_.pop_front();
+        }
+        return batch;
+    }
 
 private:
     std::deque<T> queue_;
